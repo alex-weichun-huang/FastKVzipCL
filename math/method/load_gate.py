@@ -115,13 +115,19 @@ def get_gate_id(model_name, file_name="fastkvzip"):
 def get_gate_weight(model_name, file_name):
     gate_id = get_gate_id(model_name, file_name)
 
-    try:
+    # Prefer a locally trained gate (saved by optim.py at <repo>/result_gate/<model>/<tag>.pt).
+    # Override the folder with the FASTKVZIP_GATE_DIR env var if needed.
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    base_path = os.environ.get("FASTKVZIP_GATE_DIR", os.path.join(repo_root, "result_gate"))
+    file_path = os.path.join(os.path.expanduser(base_path), gate_id)
+
+    if os.path.isfile(file_path):
+        print(f"Using local gate: {file_path}")
+    else:
+        print(f"No local gate at {file_path}; downloading released gate from HuggingFace")
         file_path = hf_hub_download(
             repo_id="Jang-Hyun/Fast-KVzip", filename=gate_id, repo_type="model"
         )
-    except:
-        base_path = "~/FastKVzip"  ## Fix this!
-        file_path = os.path.join(base_path, "result_gate", file_name)
 
     # Load the PyTorch tensor/dictionary
     weights = torch.load(file_path, weights_only=False)["module"]

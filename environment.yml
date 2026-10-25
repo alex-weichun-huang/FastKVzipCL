@@ -1,0 +1,61 @@
+# Single mamba/conda environment for the whole repo: gate training, prefill and math evaluation.
+# Create with:  bash setup_env.sh   (see STEPS.md)
+name: fastkvzip
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+
+  # GPU stack (conda-forge builds work on RHEL 8 / glibc 2.28)
+  - cuda-version=12.6
+  - pytorch=2.7.*=cuda*
+  - flash-attn=2.7.4
+  # toolchain to compile the csrc kernel (tiny_api_cuda)
+  - cuda-nvcc
+  - cuda-cudart-dev
+  - libcublas-dev      # headers pulled in by torch's ATen/cuda includes
+  - libcusparse-dev
+  - libcusolver-dev
+  - libcurand-dev
+  - gxx<14
+  - ninja
+  - setuptools
+  - packaging
+  - einops
+
+  # models / data
+  - transformers=4.51.3
+  - accelerate=1.10.1
+  - datasets=3.6.0
+  - huggingface_hub
+
+  # numerics / utilities
+  - numpy>=2.2,<3
+  - pandas>=2.2,<3
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - tqdm
+  - rich
+  - psutil
+
+  # scoring (prefill)
+  - nltk
+  - rouge-score
+  - fuzzywuzzy
+  - future
+  - decorator
+
+  # scoring (math)
+  - pebble
+  - multiprocess
+  - timeout-decorator
+  - sympy
+
+  - pip
+  - pip:
+      - rouge
+      - tree-sitter==0.21.3
+      - tree-sitter-languages==1.10.2
+      - latex2sympy2
+      - word2number

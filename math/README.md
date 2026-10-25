@@ -1,8 +1,5 @@
 ## Decoding-Intensive Tasks
-Please install required packages before evalution:
-```bash
-pip install -r requirements.txt
-```
+Dependencies are included in the repo-wide mamba env (`environment.yml`); activate it with `source env.sh` from the repo root.
 We borrowed the evaluation source codes from [R-KV](https://github.com/Zefan-Cai/R-KV).
 
 ```bash

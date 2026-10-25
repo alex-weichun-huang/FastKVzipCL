@@ -10,3 +10,8 @@
 !prefill/utils/head_score/*.pt
 !data/method.png
 **/test*.sh
+
+logs/
+csrc/build/
+csrc/dist/
+*.egg-info/

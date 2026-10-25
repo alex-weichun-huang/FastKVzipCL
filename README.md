@@ -18,14 +18,12 @@ ratio</b> while significantly improving attention efficiency.
 ## Installation
 Supported GPUs: NVIDIA Ampere (e.g, A100, RTX3090), and Hopper (e.g., H100).
 
+All dependencies (including the CUDA toolkit used to build `csrc`) are managed by mamba via `environment.yml`:
 ```bash
-pip install torch==2.7.0 --index-url https://download.pytorch.org/whl/cu128
-pip install flash-attn==2.7.3 --no-build-isolation
-cd csrc
-make
-cd ../prefill
-pip install -r requirements.txt
+bash setup_env.sh   # creates the 'fastkvzip' env and compiles the csrc kernel
+source env.sh       # activate it (on any node)
 ```
+See `STEPS.md` for Great Lakes (Slurm) details.
 We release trained gates for 
 - Qwen/Qwen2.5-{7,14}B-Instruct-1M 
 - Qwen/Qwen3-{8,14}B

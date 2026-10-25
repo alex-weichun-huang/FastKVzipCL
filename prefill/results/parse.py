@@ -162,6 +162,9 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=str, default="qa")
     parser.add_argument("--tag", type=str, default="")
     parser.add_argument("-n", "--num", type=int, default=None)
+    parser.add_argument(
+        "-o", "--out", type=str, default="", help="save scores to this JSON file"
+    )
     args = parser.parse_args()
 
     if args.level == "":
@@ -173,6 +176,7 @@ if __name__ == "__main__":
     cur_path = "./results"
 
     scores_ratio_all = {r: [] for r in ratios}
+    summary = {"method": args.model, "level": args.level, "ratios": ratios, "datasets": {}}
 
     data_list = get_data_list(args.data, args.model)
     for args.data in data_list:
@@ -233,15 +237,28 @@ if __name__ == "__main__":
 
         print("avg_performance per ratio")
         perf_full = avg_list_of_list(scores_ratio[1.0])
+        ds = {"num_samples": len(folder_list), "score": {}, "relative_score": {}}
         for r in ratios:
             perf = avg_list_of_list(scores_ratio[r])
             print(f"{perf*100:.2f}")
 
-            perf_rel = perf / perf_full
+            perf_rel = perf / perf_full if perf_full > 0 else float("nan")
             scores_ratio_all[r].append(perf_rel)
+            ds["score"][str(r)] = round(perf * 100, 2)
+            ds["relative_score"][str(r)] = round(perf_rel * 100, 2)
+        summary["datasets"][args.data] = ds
 
     print("=" * 50)
     print(data_list)
     print("Averaged relative performance (note, MRCR is not included)")
     for r in ratios:
         print(f"{np.mean(scores_ratio_all[r]) * 100:.2f}")
+
+    if args.out:
+        summary["avg_relative_score"] = {
+            str(r): round(float(np.mean(scores_ratio_all[r])) * 100, 2) for r in ratios
+        }
+        os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+        with open(args.out, "w") as f:
+            json.dump(summary, f, indent=4)
+        print(f"Scores saved at {args.out}")
