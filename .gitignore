@@ -15,3 +15,7 @@ logs/
 csrc/build/
 csrc/dist/
 *.egg-info/
+
+# gate-training features (symlinks to scratch)
+data/*
+!data/method.png

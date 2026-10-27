@@ -26,7 +26,7 @@ Training (`train_gate.sh` → `optim.py`) saves gates to:
 result_gate/<model-name-lowercase>/q<G>_dim16_sink16.pt
 ```
 
-For example: `result_gate/qwen2.5-7b-instruct-1m/q7_dim16_sink16.pt`
+For example: `result_gate/qwen3-4b-instruct-2507/q4_dim16_sink16.pt`
 
 - The loader checks this folder first. To use a different folder, set `export FASTKVZIP_GATE_DIR=/path/to/result_gate`.
 - If no local file exists, it downloads the authors' released gate from HuggingFace. The log line `Using local gate: ...` or `No local gate ... downloading` tells you which one ran.
@@ -38,15 +38,15 @@ From the repo root:
 mkdir -p logs
 sbatch eval_gate.sbatch [MODEL] [DATA] [GATE] [NUM]
 # quick test:
-sbatch eval_gate.sbatch Qwen/Qwen2.5-7B-Instruct-1M squad fastkvzip 10
+sbatch eval_gate.sbatch Qwen/Qwen3-4B-Instruct-2507 squad fastkvzip 10
 # full benchmark:
-sbatch eval_gate.sbatch Qwen/Qwen2.5-7B-Instruct-1M all fastkvzip 100
+sbatch eval_gate.sbatch Qwen/Qwen3-4B-Instruct-2507 all fastkvzip 100
 ```
 
 | Arg   | Default                        | Meaning |
 |-------|--------------------------------|---------|
-| MODEL | `Qwen/Qwen2.5-7B-Instruct-1M`  | HF model id |
-| DATA  | `all`                          | `all`, `qa`, `retv`, `redun`, or one dataset (`squad`, `gsm`, `scbench_kv`, ...) |
+| MODEL | `Qwen/Qwen3-4B-Instruct-2507`  | HF model id |
+| DATA  | `all`                          | `all`, `qa`, `retv`, `redun`, or one dataset (`squad`, `gsm`, `scbench_kv`, `mrcr`, ...). `mrcr` runs `eval_chunk_mrcr.py` on the first NUM conversations (dataset order) that fit in 128K tokens |
 | GATE  | `fastkvzip`                    | `fastkvzip` uses `q<G>_dim16_sink16`; or another gate tag saved by `optim.py` |
 | NUM   | `100`                          | max samples per dataset |
 
@@ -65,7 +65,7 @@ eval_results/<model>_<gate>_chunk16k_w4096_<data>.json
 
 ```json
 {
-  "method": "qwen2.5-7b-instruct-1m_fastkvzip_chunk16k_w4096",
+  "method": "qwen3-4b-instruct-2507_fastkvzip_chunk16k_w4096",
   "level": "pair",
   "ratios": [1.0, 0.75, 0.5, 0.4, 0.3, 0.2],
   "datasets": {
@@ -84,7 +84,7 @@ eval_results/<model>_<gate>_chunk16k_w4096_<data>.json
 
 To re-score existing outputs without regenerating them:
 ```bash
-cd prefill && python -B -m results.parse -m qwen2.5-7b-instruct-1m_fastkvzip_chunk16k_w4096 -d all -o ../eval_results/out.json
+cd prefill && python -B -m results.parse -m qwen3-4b-instruct-2507_fastkvzip_chunk16k_w4096 -d all -o ../eval_results/out.json
 ```
 
 ## 6. Files added or changed

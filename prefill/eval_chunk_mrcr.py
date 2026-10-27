@@ -32,13 +32,15 @@ if __name__ == "__main__":
     print(f"tag: {args.tag}")
 
     model = ModelKVzip(args.model, args.kv_type, args.gate_path_or_name)
-    dataset = load_dataset_all(args.data, model.tokenizer, n_data=2400)
+    # Samples are taken in dataset order, so the same idx/num always gives the same set.
+    dataset = load_dataset_all(args.data, model.tokenizer, n_data=args.idx + args.num)
+    max_idx = min(args.idx + args.num, len(dataset))
 
     tt = TimeStamp(True)
-    print("=" * 80, f"\nStart evaluation with {len(dataset)} samples")
+    print("=" * 80, f"\nStart evaluation with {args.idx}~{max_idx} samples")
 
     scores_by_ratio = defaultdict(list)
-    for data_idx in range(args.idx, len(dataset)):
+    for data_idx in range(args.idx, max_idx):
         sample = dataset[data_idx]
         ctx_ids = model.encode(sample["prompt"])
         query_ids = model.apply_template(sample["query"])

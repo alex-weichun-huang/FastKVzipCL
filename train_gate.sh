@@ -1,4 +1,4 @@
-model="${1:-Qwen/Qwen2.5-7B-Instruct-1M}"
+model="${1:-Qwen/Qwen3-4B-Instruct-2507}"
 device="${2:-0}"
 
 cd prefill

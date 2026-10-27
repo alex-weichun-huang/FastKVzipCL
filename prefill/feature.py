@@ -21,7 +21,8 @@ if __name__ == "__main__":
 
     from args import args
 
-    model = ModelKVzip(args.model, kv_type=args.kv_type)
+    # -g "" (as in train_gate.sh) means no gate, so scores come from KVzip, not a released gate
+    model = ModelKVzip(args.model, kv_type=args.kv_type, gate_path_or_name=args.gate_path_or_name)
 
     folders = [
         ("fineweb_10k", 29),

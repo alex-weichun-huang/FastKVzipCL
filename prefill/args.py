@@ -23,7 +23,7 @@ parser.add_argument(
     help="Eviction structure. pair-head/layer: uniform head/layer-budget; adakv-layer: with safeguard",
 )
 # Model and Data
-parser.add_argument("-m", "--model", type=str, default="Qwen/Qwen2.5-7B-Instruct-1M")
+parser.add_argument("-m", "--model", type=str, default="Qwen/Qwen3-4B-Instruct-2507")
 parser.add_argument(
     "-d",
     "--data",

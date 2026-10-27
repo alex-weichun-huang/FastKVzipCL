@@ -164,7 +164,7 @@ def load_fineweb(name):
     dataset = []
     text, token_count = "", 0
     num = 0
-    for i in valid:
+    for i in valid.tolist():  # plain ints; datasets rejects numpy.int64 keys
         if "cat" in name:
             if token_count < 100000:
                 text += "\n\n" + samples[i]["text"].strip()
@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "-m", "--model", type=str, default="Qwen/Qwen2.5-7B-Instruct-1M"
+        "-m", "--model", type=str, default="Qwen/Qwen3-4B-Instruct-2507"
     )
     parser.add_argument("-d", "--data", type=str, help="check data/load.py for a list")
     args = parser.parse_args()

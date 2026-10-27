@@ -206,7 +206,7 @@ def optimize(args, inputs, scores, test_freq=50, batch_size=1000):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--model", "-m", type=str, default="Qwen/Qwen2.5-7B-Instruct-1M"
+        "--model", "-m", type=str, default="Qwen/Qwen3-4B-Instruct-2507"
     )
     parser.add_argument("--dim", "-d", type=int, default=16)
     parser.add_argument("--ngroup", "-q", type=int, default=-1, help="query group size")

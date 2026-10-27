@@ -15,7 +15,7 @@ parser.add_argument(
     type=float,
     help="compression ratio (1 - eviction ratio)",
 )
-parser.add_argument("-n", "--model_name", default="Qwen/Qwen2.5-7B-Instruct-1M")
+parser.add_argument("-n", "--model_name", default="Qwen/Qwen3-4B-Instruct-2507")
 parser.add_argument("-p", "--prefill_len", default=-1, type=int)
 args = parser.parse_args()
 
