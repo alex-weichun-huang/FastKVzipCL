@@ -4,7 +4,7 @@
 #SBATCH --partition=gpu_mig40     # 1/2 of an A100 80GB (MIG 3g.40gb, 40GB)
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G                 # enough for the feature step; override for optim (see below)
+#SBATCH --mem=128G                # feature step: ~100K-token texts need ~2x18GB of CPU hidden states; override for optim
 #SBATCH --time=04:00:00           # cse595f26_class max is 4h
 #SBATCH --output=logs/%x-%j.out
 

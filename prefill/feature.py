@@ -39,6 +39,10 @@ if __name__ == "__main__":
 
         for args.idx in range(args.num):
             tag = f"{args.idx}"
+            # resume: score is saved after hidden, so its presence means this sample is done
+            if os.path.isfile(path + f"/score_{tag}.pt"):
+                print(f"skip {args.data}-{tag} (already saved)")
+                continue
 
             kv = dataset.prefill_context(
                 args.idx,
