@@ -186,6 +186,5 @@ sbatch --array=0-3 eval_gate.sbatch Qwen/Qwen3-4B-Instruct-2507 mrcr q4_dim16_si
 - Features go to `data/<model>/<DATA>_<TAG>/` (on scratch), next to the fineweb features. Nothing is overwritten.
 - Hints are in `HINTS` in `feature_hint.py` (`mrcr`, `qa`). Pick one with `--hint qa` or pass any literal text through `FEATURE_ARGS="--hint '...'"`.
 - Samples start at index 100 (`--start`), since the first 100 are used for evaluation. Contexts longer than `--max_ctx` (64K) are skipped. Collection stops at `--token_budget` (1M) context tokens, which is about what `optim` can load into 480 GB.
-- `FEATURE_ARGS="--mix_repeat"` also computes the KVzip repeat score and keeps the max of the two.
 - `FOLDERS="mrcr_hint fineweb_10k:0-29 fineweb_10k_cat:0-5"` trains on the hint features plus the original fineweb features.
 - Each run writes `responses.jsonl` (the generated responses) and `config.json` (the hint and settings) to the feature folder. Check a few responses to make sure the model follows the hint.

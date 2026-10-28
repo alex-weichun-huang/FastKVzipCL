@@ -20,7 +20,7 @@
 #   DATA : dataset name           (default mrcr)
 #   TAG  : feature folder tag     (default hint)
 # Optional environment variables:
-#   FEATURE_ARGS : extra args for feature_hint.py, e.g. "--hint qa --mix_repeat --token_budget 500000"
+#   FEATURE_ARGS : extra args for feature_hint.py, e.g. "--hint qa --token_budget 500000"
 #   FOLDERS      : feature folders for optim (default "<DATA>_<TAG>"),
 #                  e.g. "mrcr_hint fineweb_10k:0-29 fineweb_10k_cat:0-5" to mix in the repeat-prompt features
 #

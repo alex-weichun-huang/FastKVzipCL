@@ -48,7 +48,6 @@ def parse_args():
     p.add_argument("--token_budget", type=int, default=10**6, help="stop after this many context tokens in total (optim loads all into RAM, ~0.18 MB/token for Qwen3-4B)")
     p.add_argument("--max_new_tokens", type=int, default=1024, help="max response length")
     p.add_argument("--piece", type=int, default=256, help="scoring tokens per forward pass (lower if out of GPU memory)")
-    p.add_argument("--mix_repeat", action="store_true", help="also compute the KVzip repeat score and keep the max of both")
     p.add_argument("--prefill_chunk", type=int, default=16000)
     return p.parse_args()
 
@@ -114,9 +113,6 @@ if __name__ == "__main__":
         score = model.scoring_response(
             kv, torch.cat([hint_ids, a_ids], dim=1), piece_size=args.piece
         )
-        if args.mix_repeat:
-            model.scoring(kv, ctx_ids)
-            score = torch.maximum(score, torch.stack(kv.score, dim=0).squeeze())
         tt("Score")
 
         torch.save(hidden, f"{path}/hidden_{tag}.pt")
