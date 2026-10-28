@@ -27,9 +27,18 @@ QA_HINT = (
     "You will be asked questions about the previous context. Before that, list the key "
     "facts, names, numbers and details that such questions are likely to ask about."
 )
+# Says only that retrieval questions will come, nothing about the task format.
+# Asks for details in the model's own words: asking for quotes made it repeat one sentence over and over.
+RETRIEVAL_HINT = (
+    "You will be asked questions that require retrieving specific information from the previous "
+    "context. Before that, go through the context from start to end and write a short index of it: "
+    "one line per distinct part, in order, saying what it is and a few specific details, in your own "
+    "words, that would help you find it again. Every line must describe a different part."
+)
 HINTS = {
     "qa": QA_HINT,
     "mrcr": QA_HINT,  # MRCR also uses the QA hint
+    "retrieval_hint": RETRIEVAL_HINT,
 }
 
 # The first 100 samples of these datasets are used for evaluation (eval_gate.sbatch, NUM=100)
