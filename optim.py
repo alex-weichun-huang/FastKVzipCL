@@ -17,7 +17,7 @@ import torch.optim as optim
 from transformers import AutoConfig
 from transformers.models.qwen3.modeling_qwen3 import Qwen3RMSNorm
 
-from load_data import load_data, split_fn
+from load_data import load_data, parse_folders, split_fn
 from utils import acc_fn, gate_paths, loss_fn, lr_schedule, plot
 
 
@@ -216,6 +216,14 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=2e-1)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--tag", type=str, default="")
+    parser.add_argument(
+        "--folders",
+        type=str,
+        nargs="+",
+        default=None,
+        help="feature folders under ./data/<model>, as name or name:start-end "
+        "(e.g. mrcr_hint fineweb_10k:0-29); default: fineweb_10k fineweb_10k_cat",
+    )
     args = parser.parse_args()
 
     if args.ngroup == -1:
@@ -232,7 +240,8 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
 
     name = args.model.split("/")[-1].lower()
-    inputs, scores = load_data(path=f"./data/{name}", input_name="hidden")
+    folders = parse_folders(args.folders) if args.folders else None
+    inputs, scores = load_data(path=f"./data/{name}", input_name="hidden", folders=folders)
     modules, losses, acc, losses_test, acc_test = optimize(args, inputs, scores)
 
     path = f"./result_gate/{name}"

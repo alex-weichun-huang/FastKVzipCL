@@ -48,11 +48,16 @@ class KVScore:
         num_kv = key_states.size(1)
 
         query_states = query_states.view(bsz, num_kv, -1, q_len, head_dim)
+        # score_tail_from is set by ModelKVzip.scoring_response: the scoring tokens are fed
+        # in pieces, so each piece must also see the earlier pieces (everything after the context)
+        tail_from = getattr(self, "score_tail_from", None)
         key_states = torch.cat(
             [
                 key_states[:, :, : self.sink],  # sink tokens (generally system prompt)
                 key_states[:, :, self.start_idx : self.end_idx],  # cached KV chunk
-                key_states[:, :, -q_len:],  # KV repeat chunk
+                key_states[:, :, -q_len:]  # KV repeat chunk
+                if tail_from is None
+                else key_states[:, :, tail_from:],
             ],
             dim=2,
         )

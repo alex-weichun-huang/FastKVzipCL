@@ -274,13 +274,46 @@ class ModelKVzip:
         kv.get_score = False
 
     @torch.inference_mode()
+    def scoring_response(
+        self,
+        kv: RetainCache,
+        input_ids: torch.Tensor,
+        piece_size: int = 256,
+    ) -> torch.Tensor:
+        """Score context KV by the attention from input_ids (e.g. a hint prompt + the model's response).
+        Each context KV gets its max attention over all input tokens and the query heads in its group.
+        input_ids are fed in pieces so long responses fit in memory; each piece also attends to the
+        earlier pieces, so the attention is the same as in one full forward pass.
+        return: layers x kv_heads x ctx_len
+        """
+        seen_prev = kv._seen_tokens
+        start_idx, end_idx = kv.start_idx, kv.end_idx
+        kv.end_idx = kv.start_idx + kv.ctx_len  # the whole context is one scoring chunk
+        kv.score_tail_from = kv.end_idx  # scoring tokens start right after the context
+
+        best = None
+        for piece in chunk_fn(input_ids, piece_size):
+            kv.init_score()
+            self.__call__(piece, kv, update_cache=True)
+            s = torch.stack(kv.score, dim=0)
+            best = s if best is None else torch.maximum(best, s)
+
+        kv.slice(seen_prev)  # drop the scoring tokens, keep the context cache
+        kv.get_score, kv.score_tail_from = False, None
+        kv.start_idx, kv.end_idx = start_idx, end_idx
+        kv.score = None
+        assert best.shape[-1] == kv.ctx_len
+        return best.squeeze()
+
+    @torch.inference_mode()
     def generate(
         self,
         query: Union[str, torch.Tensor],
         kv: Optional[Union[RetainCache, EvictCache]] = None,
         update_cache: bool = False,
+        return_ids: bool = False,
     ) -> str:
-        """Obtain a model response to the query
+        """Obtain a model response to the query (return_ids=True: also return the response tokens)
         In default, we evict KV of query and generated answer after the generation by kv.slice (for multi-query evaluation).
         Set update_cache = True to enable multi-turn generation.
         """
@@ -306,6 +339,8 @@ class ModelKVzip:
             kv.slice(seen_token_prev)
         else:
             kv.prefill_ids = torch.cat([input_ids, a_ids], dim=1)
+        if return_ids:
+            return a, a_ids
         return a
 
     @torch.inference_mode()

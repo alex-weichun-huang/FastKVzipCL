@@ -40,15 +40,44 @@ def load_folder(
     return inputs, scores
 
 
+DEFAULT_FOLDERS = [
+    ("fineweb_10k", (0, 29)),
+    ("fineweb_10k_cat", (0, 5)),
+]
+
+
+def count_files(path, folder):
+    """Range covering every score_<i>.pt in a folder"""
+    idx = [
+        int(f[len("score_") : -len(".pt")])
+        for f in os.listdir(os.path.join(path, folder))
+        if f.startswith("score_") and f.endswith(".pt")
+    ]
+    return (0, max(idx) + 1) if idx else (0, 0)
+
+
+def parse_folders(specs):
+    """["name", "name:a-b", ...] -> [(name, (a, b)) or (name, None)]; None means every file"""
+    folders = []
+    for spec in specs:
+        name, _, rng = spec.partition(":")
+        if rng:
+            a, b = rng.split("-")
+            folders.append((name, (int(a), int(b))))
+        else:
+            folders.append((name, None))
+    return folders
+
+
 def load_data(
     path="/root/code/data/",
     input_name="hidden",
     add_self_score=False,
+    folders=None,
 ):
-    folders = [
-        ("fineweb_10k", (0, 29)),
-        ("fineweb_10k_cat", (0, 5)),
-    ]
+    if folders is None:
+        folders = DEFAULT_FOLDERS
+    folders = [(f, r if r is not None else count_files(path, f)) for f, r in folders]
     inputs, scores = [], []
     print(f"Loading training data from {path}/{input_name}..")
     for folder, ranges in folders:

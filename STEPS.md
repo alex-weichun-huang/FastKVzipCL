@@ -167,3 +167,25 @@ python -B -m results.parse_mrcr -m qwen3-4b-instruct-2507_fastkvzip_run1_chunk16
 | `README.md`, `math/README.md` | install instructions now point to mamba |
 | `.gitignore` | ignores `logs/`, csrc build outputs and `data/*` (feature symlinks) |
 | `result_gate/qwen3-4b-instruct-2507/q4_dim16_sink16_mygate.pt` | our trained gate (renamed from `q4_dim16_sink16.pt`; ignored by git) |
+| `prefill/feature_hint.py`, `train_gate_hint.sbatch` | new: gate training data from a task-hint prompt (section 8) |
+| `prefill/model/wrapper.py` | new `scoring_response` (scores context KV by attention from given tokens); `generate(..., return_ids=True)` |
+| `prefill/attention/score.py` | scoring tokens can be fed in pieces (`score_tail_from`); unchanged when unset |
+| `optim.py`, `load_data.py` | new `--folders` option to choose the feature folders (default: the two fineweb folders) |
+
+## 8. Train a gate on a task-hint prompt
+
+Instead of KVzip's "Repeat the previous context" prompt, `prefill/feature_hint.py` appends a hint saying what kind of question will come (it doesn't give the question itself). The model then generates a response, and each context KV is scored by its max attention from the hint and response tokens. Hidden states and scores are saved in the same format as `feature.py`:
+
+```bash
+jid=$(sbatch --parsable train_gate_hint.sbatch Qwen/Qwen3-4B-Instruct-2507 feature mrcr hint)
+sbatch --dependency=afterok:$jid --mem=480G train_gate_hint.sbatch Qwen/Qwen3-4B-Instruct-2507 optim mrcr hint
+# gate: result_gate/qwen3-4b-instruct-2507/q4_dim16_sink16_mrcr_hint.pt
+sbatch --array=0-3 eval_gate.sbatch Qwen/Qwen3-4B-Instruct-2507 mrcr q4_dim16_sink16_mrcr_hint 100
+```
+
+- Features go to `data/<model>/<DATA>_<TAG>/` (on scratch), next to the fineweb features. Nothing is overwritten.
+- Hints are in `HINTS` in `feature_hint.py` (`mrcr`, `qa`). Pick one with `--hint qa` or pass any literal text through `FEATURE_ARGS="--hint '...'"`.
+- Samples start at index 100 (`--start`), since the first 100 are used for evaluation. Contexts longer than `--max_ctx` (64K) are skipped. Collection stops at `--token_budget` (1M) context tokens, which is about what `optim` can load into 480 GB.
+- `FEATURE_ARGS="--mix_repeat"` also computes the KVzip repeat score and keeps the max of the two.
+- `FOLDERS="mrcr_hint fineweb_10k:0-29 fineweb_10k_cat:0-5"` trains on the hint features plus the original fineweb features.
+- Each run writes `responses.jsonl` (the generated responses) and `config.json` (the hint and settings) to the feature folder. Check a few responses to make sure the model follows the hint.
