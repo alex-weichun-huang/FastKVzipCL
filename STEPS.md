@@ -18,7 +18,7 @@ Re-running `setup_env.sh` after editing `environment.yml` updates the env in pla
 ```bash
 cd FastKVzipCL && source env.sh
 ```
-`env.sh` puts the HuggingFace and conda caches on scratch (`/scratch/cse595f26_class_root/cse595f26_class/$USER`), since the home quota is 80 GB.
+`env.sh` keeps the env (`~/.conda/envs/fastkvzip`), the HuggingFace cache (`~/.cache/huggingface`) and the conda package cache (`~/.conda/pkgs`) in your home folder. The home quota is 80 GB.
 
 ## 3. Train a gate
 
@@ -154,7 +154,7 @@ python -B -m results.parse_mrcr -m qwen3-4b-instruct-2507_fastkvzip_run1_chunk16
 | `environment.yml` | new: all dependencies for the repo (replaces `prefill/requirements.txt` and `math/requirements.txt`, now deleted) |
 | `setup_env.sh` | new: creates or updates the mamba env, then compiles the kernel |
 | `build_kernel.sh` | new: compiles `csrc` (`tiny_api_cuda`) into the env; run on a compute node |
-| `env.sh` | new: activates the env and puts caches on scratch; source it on any node |
+| `env.sh` | new: activates the env and keeps caches in $HOME; source it on any node |
 | `train_gate.sbatch` | new: gate training job (`feature` / `optim` / `all`), features on scratch |
 | `eval_gate.sbatch` | new: eval and scoring job; supports `--array` sample splitting and a RUN tag; runs with `sbatch` or `bash` |
 | `prefill/attention/gate.py`, `math/method/load_gate.py` | local trained gate is now used first; the old fallback path was broken |

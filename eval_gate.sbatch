@@ -58,7 +58,7 @@ else
     REPO="${SLURM_SUBMIT_DIR:?submit from the repo root}"
 fi
 
-# Environment: mamba env 'fastkvzip' + HF cache on scratch. Create it once with: bash setup_env.sh
+# Environment: mamba env 'fastkvzip' + HF cache in $HOME. Create it once with: bash setup_env.sh
 set +u; source "$REPO/env.sh"; set -u
 if [ "${CONDA_PREFIX:-}" != "$HOME/.conda/envs/fastkvzip" ]; then
     echo "ERROR: conda env 'fastkvzip' not active. Run 'bash setup_env.sh' from the repo root first." >&2
