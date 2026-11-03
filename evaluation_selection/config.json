@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "tokenizer": {
+    "id": "Qwen/Qwen3-4B-Instruct-2507",
+    "revision": "cdbee75f17c01a7cc42f958dc650907174af0554"
+  },
+  "tasks": {
+    "squad": {
+      "dataset": "rajpurkar/squad",
+      "config": "plain_text",
+      "split": "validation",
+      "revision": "7b6d24c440a36b6815f21b70d25016731768db1f",
+      "contexts": 100,
+      "questions": 1037,
+      "context_token_limit": null,
+      "selection_rule": "first100 eligible distinct context groups in source order, all QIDs"
+    },
+    "mrcr": {
+      "dataset": "openai/mrcr",
+      "config": "default",
+      "split": "train",
+      "revision": "f4c69fae7cf81f7ca26b9fee34b392a50f6b8a1d",
+      "contexts": 100,
+      "questions": 100,
+      "context_token_limit": 128000,
+      "selection_rule": "first100 eligible distinct flattened contexts in source order"
+    },
+    "scbench_summary": {
+      "dataset": "microsoft/SCBench",
+      "config": "scbench_summary",
+      "split": "test",
+      "revision": "283310bb8c5ba6909dd9a6b1be087d2937f76f6d",
+      "contexts": 14,
+      "questions": 70,
+      "context_token_limit": null,
+      "selection_rule": "locked context-hash split"
+    }
+  },
+  "scbench_split": {
+    "train": 49,
+    "validation": 7,
+    "test": 14,
+    "original_seed": 20261028,
+    "rule": "Replay locked context-hash split; never regenerate it"
+  },
+  "lock_sha256": "d3892b3f45af45a1f2ea0650ceb2c30445291584a7359ae16874426182d1389b"
+}
