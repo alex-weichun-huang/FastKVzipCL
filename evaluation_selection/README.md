@@ -5,6 +5,11 @@ experiments. The separate full-pipeline commit `1575920d4587d8bf8b574f206908a7a2
 is not included here. No training, feature generation, metrics, gate code or
 model-weight loading; only public dataset loading and a pinned tokenizer.
 
+Integrated main: `5367b15053cfa70fc4d6018f3f294c24348ae11a`. Its retrieval-hint
+and `STEPS.md` additions do not change the dataset loaders or evaluator selection
+code. The selection configuration, ID/hash lock and executable selection code
+remain unchanged from the completed-run handoff.
+
 From the checkout root, in an appropriate CPU allocation with the existing
 `datasets` and `transformers` environment:
 
@@ -36,13 +41,13 @@ There is no additional SQuAD/SCBench context cutoff or implicit truncation in th
 replay. SCBench saved context-token lengths are checked on the14 test contexts.
 
 **These are our completed-run selections, not guaranteed teammate defaults.**
-At the pinned base, `prefill/data/load.py::load_squad` uses TRAIN with an off-by-one
+At the integrated main above, `prefill/data/load.py::load_squad` uses TRAIN with an off-by-one
 context stopping condition, and `load_scbench` uses Jang-Hyun/SCBench-preprocessed.
 We use official SQuAD validation and microsoft/SCBench/scbench_summary with the
 locked held-out subset. MRCR shares the formatter and128000-token filter, but
 equivalence also depends on dataset/tokenizer revisions, ordering and evaluator
-arguments. We have not established identity with the teammate's current remote
-defaults. This delivery does not replace their evaluator or repeat training-source
+arguments. Matching the formatter/filter does not establish identical selected
+MRCR samples under unpinned defaults. This delivery does not replace their evaluator or repeat training-source
 overlap audits; it replays the previously chosen samples.
 
 Output: three dataset JSONL selection manifests (including public context,
