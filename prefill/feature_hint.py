@@ -35,7 +35,17 @@ RETRIEVAL_HINT = (
     "one line per distinct part, in order, saying what it is and a few specific details, in your own "
     "words, that would help you find it again. Every line must describe a different part."
 )
+SUMMARY_HINT = (
+    "You will be asked to summarize the previous context. Before that, write a "
+    "coherent summary that captures its main ideas and the important information "
+    "distributed throughout the context. Cover the major topics, events, findings, "
+    "and conclusions where present, preserving key entities, relationships, and "
+    "causal or chronological connections. Combine repeated information into a "
+    "single concise account, while keeping distinct facts and important exceptions. "
+    "Use your own words and include only information supported by the context."
+)
 HINTS = {
+    "redundancy_hint": SUMMARY_HINT,
     "qa": QA_HINT,
     "mrcr": QA_HINT,  # MRCR also uses the QA hint
     "retrieval_hint": RETRIEVAL_HINT,
