@@ -23,6 +23,9 @@
 #   FEATURE_ARGS : extra args for feature_hint.py, e.g. "--hint qa --token_budget 500000"
 #   FOLDERS      : feature folders for optim (default "<DATA>_<TAG>"),
 #                  e.g. "mrcr_hint fineweb_10k:0-29 fineweb_10k_cat:0-5" to mix in the repeat-prompt features
+#   OPTIM_SCRIPT : training script (default optim.py); optim_gem.py trains each folder as a
+#                  separate task with Gradient Episodic Memory, in the order given in FOLDERS
+#   OPTIM_ARGS   : extra args for the training script, e.g. "--mem_size 20000 --margin 0.5"
 #
 # Recommended: two jobs, optim only after feature succeeds:
 #   jid=$(sbatch --parsable train_gate_hint.sbatch Qwen/Qwen3-4B-Instruct-2507 feature mrcr hint)
@@ -74,7 +77,7 @@ fi
 if [ "$STEP" = "optim" ] || [ "$STEP" = "all" ]; then
     cd "$REPO"
     # shellcheck disable=SC2086
-    python -B optim.py -m "$MODEL" --folders $FOLDERS --tag "${DATA}_${TAG}"
+    python -B "${OPTIM_SCRIPT:-optim.py}" -m "$MODEL" --folders $FOLDERS --tag "${DATA}_${TAG}" ${OPTIM_ARGS:-}
     ls -la "$REPO/result_gate/$NAME"
 fi
 

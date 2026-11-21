@@ -22,6 +22,9 @@
 #          or another tag saved by optim.py (e.g. q4_dim16_sink16_mytag)
 #   NUM  : max samples per dataset         (default 100)
 #   RUN  : optional run tag; each tag writes to its own results folder (e.g. run1, run2)
+# Optional environment variable:
+#   OUT_NAME : score JSON name, saved as eval_results/<OUT_NAME>.json
+#              (default <model>_<GATE>[_<RUN>]_chunk16k_w4096_<DATA>)
 #
 # With --array=0-K the NUM samples are split evenly across the K+1 tasks, so each task
 # fits in the time limit. Example (100 MRCR samples in 4 tasks of 25):
@@ -71,7 +74,7 @@ cd "$REPO/prefill"
 mkdir -p "$REPO/logs" "$REPO/eval_results"
 
 METHOD="$(basename "$MODEL" | tr '[:upper:]' '[:lower:]')_${GATE}${RUN:+_$RUN}_chunk16k_w4096"
-OUT="$REPO/eval_results/${METHOD}_${DATA}.json"
+OUT="$REPO/eval_results/${OUT_NAME:-${METHOD}_${DATA}}.json"
 
 if [ "$DATA" = "mrcr" ]; then
     # MRCR has its own generate+grade script and parser.

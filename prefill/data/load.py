@@ -32,7 +32,7 @@ def load_dataset_all(name, tokenizer, n_data=100):
     elif "scbench" in name:
         dataset = load_scbench(name)
     elif "fineweb" in name:
-        dataset = load_fineweb(name)
+        dataset = load_fineweb(name, n_data)
     elif "mrcr" in name:
         dataset = load_mrcr(tokenizer, n_data)
     else:
@@ -140,8 +140,10 @@ def check_scbench_name(name):
     assert name in possible_tags, "SCBench data name not exist!"
 
 
-def load_fineweb(name):
-    """fineweb-[10k, 10k-cat, 100k]"""
+def load_fineweb(name, n_data=0):
+    """fineweb-[10k, 10k-cat, 100k]
+    Loads at least 1M tokens, and at least n_data samples (feature_hint.py uses samples past the first 1M tokens).
+    """
 
     samples = load_dataset(
         "HuggingFaceFW/fineweb-edu",
@@ -183,7 +185,7 @@ def load_fineweb(name):
         total += token_count
 
         text, token_count = "", 0
-        if total > 10**6:
+        if total > 10**6 and len(dataset) >= n_data:
             break
 
     return dataset

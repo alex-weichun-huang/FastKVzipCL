@@ -27,22 +27,30 @@ QA_HINT = (
     "You will be asked questions about the previous context. Before that, list the key "
     "facts, names, numbers and details that such questions are likely to ask about."
 )
-# Says only that retrieval questions will come, nothing about the task format.
-# Asks for details in the model's own words: asking for quotes made it repeat one sentence over and over.
 RETRIEVAL_HINT = (
     "You will be asked questions that require retrieving specific information from the previous "
     "context. Before that, go through the context from start to end and write a short index of it: "
     "one line per distinct part, in order, saying what it is and a few specific details, in your own "
     "words, that would help you find it again. Every line must describe a different part."
 )
+SUMMARY_HINT = (
+    "You will be asked to summarize the previous context. Before that, write a "
+    "coherent summary that captures its main ideas and the important information "
+    "distributed throughout the context. Cover the major topics, events, findings, "
+    "and conclusions where present, preserving key entities, relationships, and "
+    "causal or chronological connections. Combine repeated information into a "
+    "single concise account, while keeping distinct facts and important exceptions. "
+    "Use your own words and include only information supported by the context."
+)
 HINTS = {
-    "qa": QA_HINT,
-    "mrcr": QA_HINT,  # MRCR also uses the QA hint
+    "qa_hint": QA_HINT,
     "retrieval_hint": RETRIEVAL_HINT,
+    "summary_hint": SUMMARY_HINT,
 }
 
-# The first 100 samples of these datasets are used for evaluation (eval_gate.sbatch, NUM=100)
-EVAL_DATASETS = ["mrcr", "squad", "gsm"]
+# The first 100 samples of these datasets are used for evaluation (eval_gate.sbatch, NUM=100).
+# scbench_summary has only 70 samples, so all of it is eval data: train on other datasets.
+EVAL_DATASETS = ["mrcr", "squad", "scbench_summary"]
 
 
 def parse_args():
@@ -50,7 +58,7 @@ def parse_args():
     p.add_argument("-m", "--model", type=str, default="Qwen/Qwen3-4B-Instruct-2507")
     p.add_argument("-d", "--data", type=str, default="mrcr", help="dataset name (data/load.py)")
     p.add_argument("--tag", type=str, default="hint", help="output folder is <data>_<tag>")
-    p.add_argument("--hint", type=str, default="", help=f"hint name {list(HINTS)} or literal text; default: mrcr for mrcr, else qa")
+    p.add_argument("--hint", type=str, default="", help=f"hint name {list(HINTS)} or literal text; default: qa_hint")
     p.add_argument("--start", type=int, default=100, help="first dataset index (skip eval samples)")
     p.add_argument("--num", type=int, default=300, help="max dataset samples to scan")
     p.add_argument("--max_ctx", type=int, default=64000, help="skip contexts longer than this (tokens)")
@@ -70,7 +78,7 @@ def get_context(name, sample):
 
 if __name__ == "__main__":
     args = parse_args()
-    hint = HINTS.get(args.hint or ("mrcr" if args.data == "mrcr" else "qa"), args.hint)
+    hint = HINTS.get(args.hint or "qa_hint", args.hint)
     assert hint.strip(), "empty hint: pass a name from HINTS or literal text with --hint"
     if args.data in EVAL_DATASETS and args.start < 100:
         print(f"**Warning** samples {args.start}~99 of {args.data} are also used for evaluation")

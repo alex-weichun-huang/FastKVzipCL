@@ -54,6 +54,34 @@ def load_gate(model_name, file_name=""):
     return modules
 
 
+def init_from_gate(modules, model_name, gate):
+    """Copy a trained gate's weights into `modules` (in place) to fine-tune from it.
+
+    gate: "fastkvzip" = the released gate q{G}_dim16_sink16, or a tag saved by optim.py
+    (e.g. q4_dim16_sink16_local). Looked up at ./result_gate/<model>/<gate>.pt first,
+    otherwise downloaded from HuggingFace (Jang-Hyun/Fast-KVzip), same as prefill/attention/gate.py.
+    """
+    name = model_name.split("/")[-1].lower()
+    if gate == "fastkvzip":
+        config = AutoConfig.from_pretrained(model_name)
+        if hasattr(config, "text_config"):
+            config = config.text_config
+        gate = f"q{config.num_attention_heads // config.num_key_value_heads}_dim16_sink16"
+    gate_id = f"{name}/{gate}.pt"
+
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "result_gate", gate_id)
+    if not os.path.isfile(path):
+        from huggingface_hub import hf_hub_download
+
+        path = hf_hub_download(repo_id="Jang-Hyun/Fast-KVzip", filename=gate_id, repo_type="model")
+
+    state_dict = torch.load(path, map_location="cpu", weights_only=False)["module"]
+    assert len(state_dict) == len(modules), f"{path}: {len(state_dict)} layers, expected {len(modules)}"
+    for module, weight in zip(modules, state_dict):
+        module.load_state_dict(weight)  # strict: dim / ngroup / sink must match
+    print(f"Initialized gate from {path}")
+
+
 class Weight(nn.Module):
     def __init__(
         self,
@@ -138,6 +166,8 @@ def optimize(args, inputs, scores, test_freq=50, batch_size=1000):
         ]
     )
     print(modules[0], "x", len(modules))
+    if args.init_gate:
+        init_from_gate(modules, args.model, args.init_gate)
 
     optimizer = optim.SGD(modules.parameters(), lr=args.lr, momentum=0.9)
 
@@ -223,6 +253,13 @@ if __name__ == "__main__":
         default=None,
         help="feature folders under ./data/<model>, as name or name:start-end "
         "(e.g. mrcr_hint fineweb_10k:0-29); default: fineweb_10k fineweb_10k_cat",
+    )
+    parser.add_argument(
+        "--init_gate",
+        type=str,
+        default="",
+        help="fine-tune from this gate instead of random init: 'fastkvzip' (released gate) "
+        "or a tag in ./result_gate/<model>/ (e.g. q4_dim16_sink16_local)",
     )
     args = parser.parse_args()
 
