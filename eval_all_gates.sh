@@ -10,12 +10,13 @@ NUM=100
 # short name -> gate file in result_gate/qwen3-4b-instruct-2507/<file>.pt
 declare -A GATES=(
     [local]=q4_dim16_sink16_local
+    [qa_hint]=q4_dim16_sink16_fineweb_10k_qa_hint
     [summary_hint]=q4_dim16_sink16_fineweb_10k_summary_hint
     [retrieval_hint]=q4_dim16_sink16_fineweb_10k_retrieval_hint
     [mixhint]=q4_dim16_sink16_fineweb_10k_mixhint
     [gem]=q4_dim16_sink16_fineweb_10k_gem
 )
-ORDER=(local summary_hint retrieval_hint mixhint gem)
+ORDER=(local qa_hint summary_hint retrieval_hint mixhint gem)
 
 # Array size per dataset, so each task fits in 4h
 # (measured: squad ~15s/sample, mrcr ~3.5min/sample, scbench_summary ~9.5min/sample)

@@ -241,7 +241,8 @@ if __name__ == "__main__":
         type=str,
         nargs="+",
         default=["fineweb_10k_qa_hint", "fineweb_10k_retrieval_hint", "fineweb_10k_summary_hint"],
-        help="one feature folder per task, in training order (name or name:start-end)",
+        help="one task per entry, in training order (name or name:start-end); join folders with + "
+        "to train them as one task, e.g. fineweb_10k:0-29+fineweb_10k_cat:0-5",
     )
     parser.add_argument(
         "--steps_per_task",
@@ -282,7 +283,7 @@ if __name__ == "__main__":
     name = args.model.split("/")[-1].lower()
     tasks = []
     for spec in args.folders:
-        inputs, scores = load_data(path=f"./data/{name}", input_name="hidden", folders=parse_folders([spec]))
+        inputs, scores = load_data(path=f"./data/{name}", input_name="hidden", folders=parse_folders(spec.split("+")))
         if 0 < args.max_tokens < inputs.shape[-2]:
             keep = torch.randperm(inputs.shape[-2])[: args.max_tokens].sort().values
             inputs, scores = inputs[..., keep, :], scores[..., keep]
@@ -290,7 +291,7 @@ if __name__ == "__main__":
         del inputs, scores
         print(f"task {spec}: train {tuple(x_train.shape)}, test {tuple(x_test.shape)}")
         tasks.append(
-            {"name": spec.split(":")[0], "x_train": x_train, "y_train": y_train, "x_test": x_test, "y_test": y_test}
+            {"name": "+".join(f.split(":")[0] for f in spec.split("+")), "x_train": x_train, "y_train": y_train, "x_test": x_test, "y_test": y_test}
         )
 
     modules, hist = optimize_gem(args, tasks, args.device)
