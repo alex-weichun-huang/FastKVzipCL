@@ -130,7 +130,9 @@ class Weight(nn.Module):
             # head x 1 x sink x group
             logit += self.b.unsqueeze(2)
             logit_base = torch.matmul(self.k_base, queries) / self.d
-            score = 1 / (1 + torch.exp(logit_base - logit).sum(2, keepdim=True))
+            # = 1 / (1 + sum exp(logit_base - logit)), but without exp overflowing to inf,
+            # which gives 0 * inf = NaN gradients once a logit gap exceeds ~88
+            score = torch.sigmoid(-torch.logsumexp(logit_base - logit, dim=2, keepdim=True))
         else:
             score = 1 / (1 + torch.exp(-logit))
 

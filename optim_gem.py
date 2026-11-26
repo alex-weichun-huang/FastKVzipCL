@@ -146,7 +146,8 @@ def optimize_gem(args, tasks, device, test_freq=50, batch_size=1000):
         x_train, y_train = task["x_train"], task["y_train"]
         n_samples = x_train.shape[-2]
         n_split = max(1, n_samples // batch_size)
-        n_proj, n_checks = 0, 0
+        n_proj, n_checks, n_rescaled, n_skipped = 0, 0, 0, 0
+        max_v, max_ratio = 0.0, 0.0
         print(
             f"\n=== Task {t}: {task['name']} ({n_samples} train tokens, {len(memories)} memories, "
             f"{args.steps_per_task} steps) ==="
@@ -174,20 +175,39 @@ def optimize_gem(args, tasks, device, test_freq=50, batch_size=1000):
             sum(cur).backward()
 
             if mem_grads:
-                k = len(mem_grads)
-                g = torch.stack([flat_layer_grads(m) for m in modules])  # layer x p
-                G = torch.stack([torch.stack(mg) for mg in mem_grads], dim=1)  # layer x k x p
-                dots = torch.einsum("lkp,lp->lk", G.float(), g.float()).double().cpu().numpy()
+                g = torch.stack([flat_layer_grads(m) for m in modules]).float()  # layer x p
+                G = torch.stack([torch.stack(mg) for mg in mem_grads], dim=1).float()  # layer x k x p
+                dots = torch.einsum("lkp,lp->lk", G.double(), g.double()).cpu().numpy()
                 n_checks += n_layer
-                bad = (dots < 0).any(1)
+                bad = (dots < 0).any(1) & np.isfinite(dots).all(1)
                 if bad.any():
-                    gram = torch.einsum("lkp,ljp->lkj", G.float(), G.float()).double().cpu().numpy()
+                    gram = torch.einsum("lkp,ljp->lkj", G.double(), G.double()).cpu().numpy()
                     for l in np.nonzero(bad)[0]:
                         v = solve_gem_qp(gram[l], dots[l], margin=args.margin)
+                        max_v = max(max_v, float(np.max(v)))
                         v = torch.as_tensor(v, device=device, dtype=torch.float32)
-                        new = g[l].float() + (v[:, None] * G[l].float()).sum(0)
-                        set_layer_grads(modules[l], new.to(g.dtype))
+                        new = g[l] + (v[:, None] * G[l]).sum(0)
+                        # An exact projection onto the memory cone never lengthens g (margin 0);
+                        # a longer result means the QP was ill-conditioned, so rescale it.
+                        g_norm, new_norm = g[l].norm(), new.norm()
+                        ratio = (new_norm / (g_norm + 1e-12)).item()
+                        max_ratio = max(max_ratio, ratio)
+                        if args.max_proj_ratio > 0 and ratio > args.max_proj_ratio:
+                            new = new * (args.max_proj_ratio * g_norm / new_norm)
+                            n_rescaled += 1
+                        set_layer_grads(modules[l], new)
                         n_proj += 1
+
+            if args.clip > 0:
+                nn.utils.clip_grad_norm_(modules.parameters(), args.clip)
+
+            # Skip the update if any gradient is NaN/inf, instead of poisoning the weights
+            # (a NaN prediction later trips a CUDA assert inside binary_cross_entropy).
+            if not all(torch.isfinite(p.grad).all() for p in modules.parameters()):
+                n_skipped += 1
+                if n_skipped > args.max_skipped:
+                    raise RuntimeError(f"task {t} step {i}: {n_skipped} steps with non-finite gradients")
+                continue
 
             alpha = lr_schedule(i, args.steps_per_task)
             for pg in optimizer.param_groups:
@@ -208,12 +228,19 @@ def optimize_gem(args, tasks, device, test_freq=50, batch_size=1000):
                     f"{tk['name']}={np.mean(lt[j]):.3f}/{np.mean(at[j])*100:.1f}%"
                     for j, tk in enumerate(tasks)
                 )
-                proj = f" proj {n_proj}/{n_checks}" if memories else ""
+                proj = (
+                    f" proj {n_proj}/{n_checks} max_v {max_v:.3g} max|z|/|g| {max_ratio:.3g} rescaled {n_rescaled}"
+                    if memories
+                    else ""
+                )
+                if not all(np.isfinite(lt[j]).all() for j in range(len(tasks))):
+                    raise RuntimeError(f"task {t} step {i}: non-finite test loss, training diverged")
                 print(
                     f"[{t}:{i:5d}] loss {np.mean(hist['loss'][-1]):.3f} acc {np.mean(acc_train)*100:.1f}%"
                     f" | test {per_task}{proj} (time: {time.time()-s:.0f}s)"
                 )
-                n_proj, n_checks = 0, 0
+                n_proj, n_checks, n_rescaled = 0, 0, 0
+                max_v, max_ratio = 0.0, 0.0
 
         # Episodic memory for this task: random training tokens, kept on CPU
         if t < len(tasks) - 1:
@@ -253,6 +280,16 @@ if __name__ == "__main__":
     parser.add_argument("--mem_size", type=int, default=20000, help="episodic memory tokens per task")
     parser.add_argument("--mem_batch", type=int, default=1000, help="memory tokens per gradient check")
     parser.add_argument("--margin", type=float, default=0.0, help="GEM margin (memory strength)")
+    parser.add_argument(
+        "--max_proj_ratio",
+        type=float,
+        default=1.0,
+        help="rescale a GEM-projected layer gradient longer than this many times the original (0: off)",
+    )
+    parser.add_argument("--clip", type=float, default=0.0, help="global grad-norm clip after GEM (0: off)")
+    parser.add_argument(
+        "--max_skipped", type=int, default=50, help="abort after this many steps with non-finite gradients"
+    )
     parser.add_argument(
         "--max_tokens", type=int, default=0, help="if > 0, randomly keep at most this many tokens per task"
     )

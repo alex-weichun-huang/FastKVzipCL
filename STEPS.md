@@ -40,17 +40,12 @@ FOLDERS="$H" OPTIM_SCRIPT=optim_gem.py sbatch --mem=480G train_gate_hint.sbatch 
 - `optim` loads every feature into RAM: a single hint fits in 200G; mixhint, GEM and local need 480G.
 - Features are written to `data/qwen3-4b-instruct-2507` (a symlink to scratch, ~72 GB per hint; scratch is purged after ~60 days unused).
 
-### Fine-tune from the released gate
-```bash
-bash train_gate_finetune.sh        # 6 jobs (local, 3 hints, mixhint, gem), saves <gate>_finetune.pt
-```
-
 ### Evaluate
 ```bash
 bash eval_all_gates.sh             # gates x {squad, mrcr, scbench_summary}, 100 samples each
 # single gate / dataset:
-OUT_NAME=q4_dim16_sink16_gem_finetune_mrcr \
-  sbatch --array=0-3 eval_gate.sbatch Qwen/Qwen3-4B-Instruct-2507 mrcr q4_dim16_sink16_fineweb_10k_gem_finetune 100
+OUT_NAME=q4_dim16_sink16_gem_mrcr \
+  sbatch --array=0-3 eval_gate.sbatch Qwen/Qwen3-4B-Instruct-2507 mrcr q4_dim16_sink16_fineweb_10k_gem 100
 ```
 - Setup: chunked prefill 16K, window 4096, pair-level scoring, KV ratios 1.0 / 0.75 / 0.5 / 0.4 / 0.3 / 0.2.
 - `--array` splits the samples evenly over tasks (SQuAD ~15 s/sample, MRCR ~3.5 min, SCBench-summary ~9.5 min, hence array sizes 1 / 4 / 10). scbench_summary has only 70 samples, so the last tasks may be empty.
@@ -86,5 +81,5 @@ python -B -m results.parse_mrcr -m <method> -n 100    -o ../eval_results/out_mrc
 | `prefill/eval_chunk_mrcr.py`, `prefill/results/parse*.py` | exact `idx..idx+num` sample ranges; `-o` JSON output |
 | `optim.py`, `load_data.py` | `--folders` to choose feature folders (`name` or `name:start-end`); `--init_gate` to fine-tune from an existing gate |
 | `optim_gem.py` | **new**: GEM continual training, one task per folder |
-| `eval_all_gates.sh`, `train_gate_finetune.sh` | **new**: batch launchers for the experiments above |
+| `eval_all_gates.sh` | **new**: batch launchers for the experiments above |
 | `eval_results.ipynb` | **new**: plots score vs KV ratio for each dataset and gate |
